@@ -65,6 +65,9 @@ docker-compose.yml
 - Recommendation inputs and outputs are scoped to the authenticated employee.
 - The demo uses a seeded team and locally configured secrets. Replace the demo secret, enable HTTPS, and use managed secret storage before deployment.
 
-## GitHub submission
+## Project links
 
-Initialize this directory as a Git repository, commit the source and documentation, and publish it to a public GitHub repository. Cloud deployment screenshots and the demo recording are intentionally outside this local deliverable.
+- **GitHub repository:** [Soumik-Sarkar/team-pulse](https://github.com/Soumik-Sarkar/team-pulse)
+- **AWS demo:** [Open TeamPulse](http://teampulse-frontend-141525352907.s3-website-ap-southeast-2.amazonaws.com/)
+
+The demo currently uses an HTTP S3 website endpoint. Use it for the assignment demonstration only; configure HTTPS before sending real employee or wellness data.
