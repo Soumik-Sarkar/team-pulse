@@ -2,6 +2,8 @@
 
 This diagram describes the logical AWS network tiers for TeamPulse. Compare it with the VPC and service configuration in your deployed AWS account; the local Compose environment does not create or change AWS resources.
 
+An editable draw.io version is available at [network-architecture.drawio](network-architecture.drawio). It distinguishes the current S3 website demo and application data path from proposed AWS network controls and future EventBridge/Lambda/RDS/DynamoDB extensions.
+
 ```mermaid
 flowchart TB
   Browser[Employee browser]

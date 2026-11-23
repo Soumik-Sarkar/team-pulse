@@ -36,7 +36,7 @@ flowchart LR
   NOT --> DB
 ```
 
-See [Network architecture](docs/network-architecture.md), [AWS deployment guide](docs/aws-deployment.md), [API documentation](docs/openapi.yaml), [setup guide](docs/setup.md), and [user walkthrough](docs/walkthrough.md).
+See [Network architecture](docs/network-architecture.md) and its [editable draw.io diagram](docs/network-architecture.drawio), [AWS deployment guide](docs/aws-deployment.md), [API documentation](docs/openapi.yaml), [setup guide](docs/setup.md), and [user walkthrough](docs/walkthrough.md).
 
 ## Quick start
 
