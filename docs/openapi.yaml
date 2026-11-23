@@ -1,0 +1,252 @@
+openapi: 3.0.3
+info:
+  title: TeamPulse API
+  version: 1.0.0
+  description: API for privacy-first employee habits, team challenges, insights, and personal recommendations.
+servers:
+  - url: http://localhost:4000/api
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      security: []
+      summary: Service health check
+      responses:
+        '200': { description: API is healthy }
+  /auth/register:
+    post:
+      security: []
+      summary: Register an employee account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterInput' }
+      responses:
+        '201': { description: Account created and session issued }
+        '400': { description: Invalid input }
+        '409': { description: Email already registered }
+  /auth/login:
+    post:
+      security: []
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties: { email: { type: string, format: email }, password: { type: string } }
+      responses:
+        '200': { description: Session token and user profile }
+        '401': { description: Credentials rejected }
+  /auth/me:
+    get:
+      summary: Return signed-in user profile
+      responses:
+        '200': { description: Authenticated profile }
+        '401': { description: Authentication required }
+  /auth/profile:
+    patch:
+      summary: Update the signed-in user's display name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [name], properties: { name: { type: string, minLength: 2, maxLength: 80 } } }
+      responses:
+        '200': { description: Updated profile }
+        '400': { description: Invalid name }
+  /activities:
+    get:
+      summary: List the signed-in user's activities
+      parameters:
+        - { in: query, name: type, schema: { type: string } }
+        - { in: query, name: status, schema: { type: string, enum: [planned, done, missed] } }
+      responses:
+        '200': { description: Private activity list }
+    post:
+      summary: Create a private activity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, maxLength: 100 }
+                type: { type: string, enum: [Movement, Mindfulness, Sleep, Nutrition, Other] }
+                cadence: { type: string, enum: [Daily, Weekly] }
+                private: { type: boolean, default: true }
+      responses:
+        '201': { description: Activity created }
+        '400': { description: Missing title }
+  /activities/{id}/status:
+    patch:
+      summary: Mark activity done, missed, or planned
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { type: string, enum: [planned, done, missed] } } }
+      responses:
+        '200': { description: Activity updated and event recorded }
+        '404': { description: Activity not found for this user }
+  /activities/{id}:
+    patch:
+      summary: Update a private activity
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { title: { type: string, maxLength: 100 }, type: { type: string, enum: [Movement, Mindfulness, Sleep, Nutrition, Other] }, cadence: { type: string, enum: [Daily, Weekly] } } }
+      responses:
+        '200': { description: Updated activity }
+        '404': { description: Activity not found for this user }
+    delete:
+      summary: Delete a private activity and its completion event history
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Activity and related events deleted }
+        '404': { description: Activity not found for this user }
+  /challenges:
+    get:
+      summary: List team challenges and progress
+      responses:
+        '200': { description: Challenges for the authenticated user's team }
+  /challenges/{id}/join:
+    post:
+      summary: Join a challenge for the authenticated user's team
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '201': { description: Challenge membership created }
+        '404': { description: Challenge not found for this team }
+  /challenges/{id}/leaderboard:
+    get:
+      summary: Get aggregated team challenge progress
+      description: Returns team completion and participant totals; it does not expose individual activity histories.
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Aggregated team progress }
+        '404': { description: Challenge not found for this team }
+  /admin/challenges:
+    post:
+      summary: Create a challenge for the manager's team
+      description: Manager-only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [title, goal], properties: { title: { type: string, maxLength: 120 }, description: { type: string }, goal: { type: integer, minimum: 1 }, badge: { type: string }, startDate: { type: string, format: date }, endDate: { type: string, format: date } } }
+      responses:
+        '201': { description: Challenge created }
+        '403': { description: Manager role required }
+  /admin/challenges/{id}:
+    patch:
+      summary: Update a challenge owned by the manager's team
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Challenge updated }
+        '403': { description: Manager role required }
+        '404': { description: Challenge not found }
+    delete:
+      summary: Delete a team challenge
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Challenge deleted }
+        '403': { description: Manager role required }
+  /admin/users:
+    get:
+      summary: List team account identities and roles
+      description: Manager-only. This endpoint does not include personal wellness activities.
+      responses:
+        '200': { description: Team account list without wellness history }
+        '403': { description: Manager role required }
+  /admin/users/{id}/role:
+    patch:
+      summary: Change a team member's role
+      description: Manager-only; a manager cannot change their own role.
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [role], properties: { role: { type: string, enum: [employee, manager] } } }
+      responses:
+        '200': { description: Role updated }
+        '400': { description: Invalid role or self-change attempted }
+        '403': { description: Manager role required }
+        '404': { description: Team member not found }
+  /insights/personal:
+    get:
+      summary: Get personal analytics
+      responses:
+        '200': { description: Analytics for the authenticated user only }
+  /insights/team:
+    get:
+      summary: Get aggregated team analytics
+      description: Manager-only. Returns team totals without names or individual wellness histories.
+      responses:
+        '200': { description: Aggregated team insight }
+        '403': { description: Manager role required }
+  /recommendations:
+    get:
+      summary: Get personalized timing recommendations
+      description: Uses only the authenticated user's activity history; includes a starter suggestion when no completion history exists.
+      responses:
+        '200': { description: Private recommendation list }
+  /recommendations/accept:
+    post:
+      summary: Accept a personalized timing recommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, properties: { activityId: { type: string }, activityTitle: { type: string, maxLength: 100 }, suggestedWindow: { type: string } } }
+      responses:
+        '201': { description: Recommendation saved to a personal activity }
+        '400': { description: Activity ID or valid starter activity title is required }
+        '404': { description: Activity not found for this user }
+  /notifications:
+    get:
+      summary: List personal notifications
+      responses:
+        '200': { description: Notifications for the authenticated user }
+  /notifications/{id}/read:
+    patch:
+      summary: Mark a personal notification as read
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Notification marked read }
+        '404': { description: Notification not found for this user }
+  /admin/summary:
+    get:
+      summary: Manager administration summary
+      responses:
+        '200': { description: Team employee and challenge totals }
+        '403': { description: Manager role required }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    RegisterInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 10 }
